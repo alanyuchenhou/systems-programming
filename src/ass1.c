@@ -43,9 +43,20 @@ int C(int x, int y)
 //(4). Find where are argc, argv and env located in the stack.
 //     What is exactly argv?
 
+  printf("\n(1). Print the stack frame link list\n");
+  printf("current frame -> next frame\n");
   int *frame_pointer = FP;
   for (; frame_pointer != 0; frame_pointer = *frame_pointer) {
-	  printf("new FP = %8x\n", frame_pointer);
+	  printf("%8x -> %8x\n", frame_pointer, *frame_pointer);
+  }
+
+  printf("\n(2). Print the stack contents from FP-8 to the frame of main()\n");
+  printf("\n(3). On a hard copy of the print out, identify the stack contents\n");
+  printf("as LOCAL VARIABLES, PARAMETERS, stack frame pointer of each function.\n");
+  printf("adress -> contents\n");
+  int * stack_iterator = FP - 8;
+  for (; stack_iterator < FP - 8 + 100; stack_iterator += 1){
+	  printf("%8x -> %8x\n", stack_iterator, *stack_iterator);
   }
   return 0;
 
@@ -86,6 +97,12 @@ int main(int argc, char *argv[ ], char *env[ ])
 
   a=1; b=2; c=3;
   A(a,b);
+
+  printf("\n(4). Find where are argc, argv and env located in the stack. What is exactly argv?\n");
+  int index = 0;
+  for (; argv[index] != 0; index += 1) {
+	  printf("argv[%d] = %s\n", index, argv[index]);
+  }
   printf("exit main\n");
   return 0;
 }
