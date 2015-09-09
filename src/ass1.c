@@ -87,7 +87,7 @@ int A(int x, int y)
   return 0;
 }
 
-int main(int argc, char *argv[ ], char *env[ ])
+int main1(int argc, char *argv[ ], char *env[ ])
 {
   int a,b,c;
   printf("enter main\n");
