@@ -45,28 +45,31 @@ void printChildren(Node * parent) {
 	}
 }
 
-Node * findChild(Node * parent, char* childName, char type){
+Node * findChildNode(Node * parent, char* childName, char type){
 	assert(parent != NULL);
-	printf("findChild: parent->name = %s, childName = %s\n", parent->name, childName);
-	if (strcmp(childName, "..") == 0) {
-		return parent->parent;
-	} else if (strcmp(childName, ".") == 0) {
+	printf("findChildNode: looking for parent->name = %s, childName = %s, type = %c\n", parent->name, childName, type);
+	if (childName == NULL) {
 		return parent;
 	}
-	Node * child = parent->child;
-	char targetName [64];
-	strcpy(targetName, childName);
-	for (; child != NULL; child = child->olderSibling) {
-		if (child->name == targetName && child->type == type)
-			return child;
+	Node * candidate;
+	if (strcmp(childName, "..") == 0) {
+		candidate = parent->parent;
+	} else if (strcmp(childName, ".") == 0) {
+		candidate = parent;
+	} else {
+		candidate = parent->child;
+		for (; candidate != NULL; candidate = candidate->olderSibling) {
+			if (strcmp(candidate->name, childName) == 0 && candidate->type == type)
+				break;
+		}
 	}
-	printf("findChild: unable to find %s\n", childName);
-	return NULL;
+	printf("findChildNode: found %s\n", candidate->name);
+	return candidate;
 }
 
 int add(Node * parent, char* name, char type) {
 	printf("add: %s\n", name);
-	Node * target = findChild(parent, name, type);
+	Node * target = findChildNode(parent, name, type);
 	if (target != NULL) {
 		return -1;
 	}
@@ -79,7 +82,7 @@ int add(Node * parent, char* name, char type) {
 }
 
 int delete(Node * parent, char* name, char type) {
-	Node * target = findChild(parent, name, type);
+	Node * target = findChildNode(parent, name, type);
 	if (target == NULL) {
 		return -1;
 	}
@@ -93,28 +96,24 @@ int delete(Node * parent, char* name, char type) {
 	return 0;
 }
 
-void pwd(Node * node){
+void pwd(Node * node) {
 	assert(node != NULL);
-	printf("pwd: %s", node->name);
 	if (node->parent == NULL) {
-		printf("/");
 		return;
-	} else {
-		pwd(node->parent);
-		printf("%s/", node->name);
 	}
+	pwd(node->parent);
+	printf("/%s", node->name);
 	return;
 }
 
-int mkdir(Node * targetDir, char * name){
+int mkdir(Node * targetDir, char * name) {
 	assert(targetDir != NULL);
 	printf("mkdir: %s\n", name);
-	pwd(targetDir);
 	int success = add(targetDir, name, 'D');
 	return success;
 }
 
-void rmdir(char * cwd, char * pathname){
+void rmdir(char * cwd, char * pathname) {
 	return;
 }
 
@@ -147,29 +146,30 @@ void quit(){
 	return;
 }
 
-Node * findTargetNode(Node* root, Node* cwd, char* pathName) {
-	printf("findTargetNode: pathName = %s\n", pathName);
+Node * findTargetDir(Node* root, Node* cwd, char* pathName) {
 	char pathNameCopy[128];
 	strcpy(pathNameCopy, pathName);
 	char dirName[128];
 	strcpy(dirName, dirname(pathNameCopy));
-	Node * targetNode;
+	printf("findTargetDir: looking for dirName = %s\n", dirName);
+	Node * candidate;
 	if (dirName[0] == '/') {
-		targetNode = root;
+		candidate = root;
 	} else {
-		targetNode = cwd;
+		candidate = cwd;
 	}
 	char * fileName;
 	fileName = strtok(dirName, "/");
-	targetNode = findChild(targetNode, fileName, 'D');
+	candidate = findChildNode(candidate, fileName, 'D');
 	while ((fileName = strtok(0, "/"))) {
-		if (targetNode == NULL) {
-			return NULL;
+		if (candidate == NULL) {
+			break;
 		} else {
-			targetNode = findChild(targetNode, fileName, 'D');
+			candidate = findChildNode(candidate, fileName, 'D');
 		}
 	}
-	return targetNode;
+	printf("findTargetDir: found targetNode = %s\n", candidate->name);
+	return candidate;
 }
 
 void excecuteCommand(char* pathName, char* command, Node* targetNode, Node* cwd) {
@@ -178,12 +178,23 @@ void excecuteCommand(char* pathName, char* command, Node* targetNode, Node* cwd)
 	strcpy(pathNameCopy, pathName);
 	char baseName[128];
 	strcpy(baseName, basename(pathNameCopy));
-	printf("excecuteCommand: baseName1 = %s \n", baseName);
+	printf("excecuteCommand: baseName = %s \n", baseName);
 	if (strcmp(command, "mkdir") == 0) {
 		mkdir(targetNode, baseName);
 	} else if (strcmp(command, "ls") == 0) {
 		ls(cwd);
 	}
+}
+
+void traversal(Node * node) {
+	if (node == NULL) {
+		return;
+	}
+	printf("%c ", node->type);
+	pwd(node);
+	printf("\n");
+	traversal(node->olderSibling);
+	traversal(node->child);
 }
 
 int main() {
@@ -192,13 +203,17 @@ int main() {
 //	while(true) {
 	int i = 0;
 	for (; i<99; i++){
+		printf("##########################################################\n");
+		printf("print tree: \n");
+		traversal(root);
 		pwd(cwd);
+		printf("$ ");
 		char input[128];
 		fgets(input, 128, stdin);
 		char command[128];
 		char pathName[128];
 		sscanf(input, "%s %s", command, pathName);
-		Node * targetNode = findTargetNode(root, cwd, pathName);
+		Node * targetNode = findTargetDir(root, cwd, pathName);
 		if (targetNode == NULL) {
 			printf("no such file or directory: %s\n", pathName);
 			continue;
