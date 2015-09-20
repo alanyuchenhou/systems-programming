@@ -9,7 +9,7 @@
 #include <libgen.h>
 #include <assert.h>
 #include <stdbool.h>
-
+#include <stddef.h>
 struct Node {
 	char name[64];
 	char type;
@@ -311,7 +311,7 @@ void reload(Node* root, Node* cwd){
 	return;
 }
 
-int main() {
+int main2() {
 	printf("###############################################################\n");
 	Node * root = initialize();
 	Node * cwd = root;
