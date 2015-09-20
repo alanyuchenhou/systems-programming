@@ -15,12 +15,12 @@
 #include <sys/wait.h>
 #include <fcntl.h>
 
-int main() {
+int getCommand(char* arguments[]) {
 	printf("$ ");
 	char* line = NULL;
-	char* token;
-	int read;
-	size_t length;
+	char* token = NULL;
+	int read = 0;
+	size_t length = 0;
 	read = getline(&line, &length, stdin);
 	if (read == -1) {
 		exit(1);
@@ -28,41 +28,92 @@ int main() {
 	if (line[strlen(line) - 1] == '\n') {
 		line[strlen(line) - 1] = '\0';
 	}
-	char* strings[9];
 	int index = 0;
 	while ((token = strsep(&line, " ")) != NULL) {
-		strings[index] = token;
+		arguments[index] = token;
 		index++;
 	}
-	strings[index] = NULL;
-	for (index = 0; strings[index] != NULL; index++) {
-		printf("%s\n", strings[index]);
+	arguments[index] = NULL;
+//	printf("getCommand: ");
+//	for (index = 0; arguments[index] != NULL; index++) {
+//		printf("%s ", arguments[index]);
+//	}
+//	printf("\n");
+	return 0;
+}
+
+int execute(char* arguments[]) {
+	int index = 0;
+	for (; arguments[index] != NULL; index++) {
+		if (strcmp(arguments[index], "<") == 0) {
+//			printf("child: input redirection!\n");
+			int fdin = open(arguments[index+1], O_RDONLY);
+			dup2(fdin, 0);
+			close(fdin);
+			break;
+		} else if (strcmp(arguments[index], ">") == 0) {
+//			printf("child: output redirection!\n");
+			FILE* garbage = fopen(arguments[index+1], "w+");
+			fclose(garbage);
+			int fdout = open(arguments[index+1], O_WRONLY | O_CREAT, 0600);
+			dup2(fdout, 1);
+			close(fdout);
+			break;
+		} else if (strcmp(arguments[index], ">>") == 0) {
+//			printf("child: output append redirection!\n");
+			int fdout = open(arguments[index+1], O_WRONLY | O_APPEND);
+			dup2(fdout, 1);
+			close(fdout);
+			break;
+		}
 	}
+	arguments[index] = NULL;
+	execvp(arguments[0], arguments);
+	return 0;
+}
+
+int makeChildWork(char* arguments[]) {
+//	printf("makeChildWork: initiating\n");
 	int pid;
 	int status;
-	pid = fork(); // fork syscall; parent returns child pid; child returns 0
-
-	if (pid < 0) { // fork() may fail. e.g. no more PROC in Kernel
+	pid = fork();
+	if (pid < 0) { // fork() may fail
 		perror("fork faild");
 		exit(1);
 	}
-
-	if (pid) { // parent
-		printf("parent: child.pid = %d; pid = %d; ppid = %d\n", pid, getpid(),
-				getppid());
+	if (pid != 0) { // parent
+//		printf("parent: pid = %d; ppid = %d\n", getpid(), getppid());
 		pid = wait(&status);
-		printf("parent: dead_child.pid = %d, status = %04x\n", pid, status);
-
+//		printf("parent: dead_child.pid = %d, status = %04x\n", pid, status);
 	} else { // child
-		printf("child: pid = %d; ppid = %d\n", getpid(), getppid());
-		execl("ls", "ls", NULL);
-		printf("child: dying\n");
-		exit(100); //OR {int a,b; a=b/0;} ==> see how does it die
+		execute(arguments);
+	}
+	return 0;
+}
 
-		close(0); // system call to close file descriptor 0
-		open("filename", O_RDONLY); // open filename for READ, which
-		close(1);
-		open("filename", O_WRONLY | O_CREAT, 0644);
+int mysh() {
+	char* arguments[100];
+	getCommand(arguments);
+	if (strcmp(arguments[0], "cd") == 0) {
+		if (arguments[1] != NULL) {
+//			printf("arguments[1] = %s\n", arguments[1]);
+			chdir(arguments[1]);
+		} else {
+//			printf("HOME = %s\n", getenv("HOME"));
+			chdir(getenv("HOME"));
+		}
+	} else if (strcmp(arguments[0], "exit") == 0) {
+		exit(1);
+	} else {
+		makeChildWork(arguments);
+	}
+	return 0;
+}
+
+int main() {
+	int iteration = 0;
+	for (; iteration < 100; iteration++) {
+		mysh();
 	}
 	return 0;
 }
