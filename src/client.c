@@ -11,11 +11,11 @@
 #define MAX 256
 
 // Define variables
-struct hostent *hp;              
-struct sockaddr_in  server_addr; 
+struct hostent *hp;
+struct sockaddr_in  server_addr;
 
 int sock, r;
-int SERVER_IP, SERVER_PORT; 
+int SERVER_IP, SERVER_PORT;
 
 // clinet initialization code
 
@@ -53,16 +53,17 @@ int client_init(char *argv[])
      exit(1);
   }
 
-  printf("5 : connected OK to \007\n"); 
+  printf("5 : connected OK to \007\n");
   printf("---------------------------------------------------------\n");
-  printf("hostname=%s  IP=%s  PORT=%d\n", 
+  printf("hostname=%s  IP=%s  PORT=%d\n",
           hp->h_name, inet_ntoa(SERVER_IP), SERVER_PORT);
   printf("---------------------------------------------------------\n");
 
   printf("========= init done ==========\n");
+  return 0;
 }
 
-main(int argc, char *argv[ ])
+int mainclient(int argc, char *argv[ ])
 {
   int n;
   char line[MAX], ans[MAX];
@@ -92,6 +93,7 @@ main(int argc, char *argv[ ])
     n = read(sock, ans, MAX);
     printf("client: read  n=%d bytes; echo=(%s)\n",n, ans);
   }
+  return 0;
 }
 
 

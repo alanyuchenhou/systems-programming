@@ -70,9 +70,10 @@ int server_init(char *name) {
 	printf("5 : server is listening ....\n");
 	listen(sock, 5);
 	printf("===================== init done =======================\n");
+	return 0;
 }
 
-main(int argc, char *argv[]) {
+int mainserver(int argc, char *argv[]) {
 	char *hostname;
 	char line[MAX];
 
@@ -133,5 +134,6 @@ main(int argc, char *argv[]) {
 			printf("server: ready for next request\n");
 		}
 	}
+	return 0;
 }
 
