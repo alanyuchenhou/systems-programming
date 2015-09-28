@@ -185,7 +185,7 @@ void ls(Node * node){
 }
 
 
-int mkdir(Node * parentNode, char * dirName) {
+int makeDir(Node * parentNode, char * dirName) {
 	if (parentNode == NULL || parentNode->type != 'D') {
 		printf("mkdir: unable to find parent directory\n");
 		return -1;
@@ -257,7 +257,7 @@ Node* excecuteCommand(char* command, char* pathName, Node* root, Node* cwd) {
 	char baseName[128];
 	strcpy(baseName, basename(pathNameCopy));
 	if (strcmp(command, "mkdir") == 0) {
-		mkdir(parentNode, baseName);
+		makeDir(parentNode, baseName);
 	} else if (strcmp(command, "ls") == 0) {
 		if (strcmp(pathName, "") == 0) {
 			ls(cwd);

@@ -147,7 +147,7 @@ int mysh() {
 	return 0;
 }
 
-int main() {
+int main3() {
 	int iteration = 0;
 	for (; iteration < 100; iteration++) {
 		mysh();
