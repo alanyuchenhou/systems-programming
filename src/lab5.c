@@ -13,6 +13,6 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <fcntl.h>
-int main() {
+int main5() {
 	return 0;
 }
