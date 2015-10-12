@@ -29,11 +29,11 @@ char home[256]; // $HOME directory
 int client_init(char *argv[]);
 int findCommand(char * command);
 void menu();
-void get(char *name);
-void put(char *name);
+int get(char *name);
+int put(char *name);
 void ls(char *name);
 void cd(char *name);
-void pwd();
+int pwd();
 void smkdir(char *name);
 void srmdir(char *name);
 void rm(char *name);
@@ -194,10 +194,6 @@ main(int argc, char *argv[], char *env[]) {
 			lrm(fileName);
 			break;
 		}
-
-		// Read a line from sock and show it
-		n = read(sock, ans, MAX);
-		printf("client: read  n=%d bytes; echo=(%s)\n", n, ans);
 	}
 }
 
@@ -264,19 +260,41 @@ void menu() {
 	printf("*************************************************\n\n");
 }
 
-void get(char *name) {
-	FILE* destination = fopen("test_file", "w+");
-	char ans[MAX];
+int get(char *fileName) {
+	printf("get: getting %s\n", fileName);
+	char buffer[MAX];
 	int size;
+	FILE* destination = fopen(fileName, "w+");
 	if (destination) {
-		while (strcmp(ans, "@") != 0) {
-			read(sock, ans, MAX);
-			fwrite(ans, 1, MAX, destination);
+		while (size = read(sock, buffer, MAX)) {
+			fwrite(buffer, 1, size, destination);
+			printf("get: got %d\n", size);
+			if (size < MAX) {
+				fclose(destination);
+				printf("get: got %s\n", fileName);
+				return 0;
+			}
 		}
 	}
-	fclose(destination);
+	return -1;
 }
-void put(char *name) {
+int put(char *fileName) {
+	printf("put: sending %s\n", fileName);
+	char buffer[MAX];
+	int size;
+	FILE* source = fopen(fileName, "r");
+	if (source) {
+		while (size = fread(buffer, 1, MAX, source)) {
+			write(sock, buffer, size);
+			printf("put: sent %d\n", size);
+			if (size < MAX) {
+				buffer[size + 1] = '\0';
+			}
+		}
+	}
+	fclose(source);
+	printf("put: sent %s\n", fileName);
+	return 0;
 }
 void ls(char *name) {
 	char ans[MAX];
@@ -287,7 +305,11 @@ void ls(char *name) {
 }
 void cd(char *name) {
 }
-void pwd() {
+int pwd() {
+	int n;
+	char buffer[MAX];
+	n = read(sock, buffer, MAX);
+	printf("%s\n", buffer);
 }
 void smkdir(char *name) {
 }

@@ -183,15 +183,41 @@ int ls_dir(char *dname) {
 }
 
 int get(char* fileName) {
+	printf("get: sending %s\n", fileName);
 	char buffer[MAX];
 	int size;
 	FILE* source = fopen(fileName, "r");
 	if (source) {
-		while ((size = fread(buffer, 1, MAX, source)) > 0) {
-			write(newsock, buffer, MAX);
+		while (size = fread(buffer, 1, MAX, source)) {
+			write(newsock, buffer, size);
+			printf("get: sent %d\n", size);
+			if (size < MAX) {
+				buffer[size + 1] = '\0';
+			}
 		}
 	}
 	fclose(source);
+	printf("get: sent %s\n", fileName);
+	return 0;
+}
+
+int put(char* fileName) {
+	printf("put: getting %s\n", fileName);
+	char buffer[MAX];
+	int size;
+	FILE* destination = fopen(fileName, "w+");
+	if (destination) {
+		while (size = read(newsock, buffer, MAX)) {
+			fwrite(buffer, 1, size, destination);
+			printf("put: got %d\n", size);
+			if (size < MAX) {
+				fclose(destination);
+				printf("put: got %s\n", fileName);
+				return 0;
+			}
+		}
+	}
+	return -1;
 }
 
 void serverExecute(char* command) {
@@ -229,11 +255,12 @@ void serverExecute(char* command) {
 		n = write(newsock, "@", MAX);
 	} else if (strcmp(arguments[0], "get") == 0) {
 		status = get(arguments[1]);
-		n = write(newsock, "@", MAX);
+	} else if (strcmp(arguments[0], "put") == 0) {
+		status = put(arguments[1]);
 	}
 	char result[MAX];
-	sprintf(result, "status = %d", status);
-	n = write(newsock, result, MAX);
+//	sprintf(result, "status = %d", status);
+//	n = write(newsock, result, MAX);
 }
 
 int main(int argc, char *argv[]) {
