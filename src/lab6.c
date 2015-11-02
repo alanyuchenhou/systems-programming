@@ -190,8 +190,6 @@ int ialloc(int fd) {
 
 int blockSearch(int fd, int blockNumber, char targetType, char * targetName) {
 	assert(blockNumber != 0);
-	printf("blockSearch: blockNumber = %d; targetType = %x; targetName = %s;\n",
-			blockNumber, targetType, targetName);
 	char * blockHead = getBlock(fd, blockNumber);
 	char * blockTail = blockHead + BLOCK_SIZE;
 	for (DirEntry * dirEntry = (DirEntry *) blockHead;
@@ -211,8 +209,8 @@ int blockSearch(int fd, int blockNumber, char targetType, char * targetName) {
 Inode * inodeSearch(int fd, int inodeTable, Inode * inode, char targetType,
 		char * targetName) {
 	assert(inode != NULL);
-	printf("inodeSearch: inode = %d; targetType = %x; targetName = %s;\n",
-			(int) inode, targetType, targetName);
+	printf("inodeSearch: targetType = %x; targetName = %s;\n", targetType,
+			targetName);
 	for (int index = 0; inode->i_block[index] != 0; index++) {
 		int inodeNumber = blockSearch(fd, (int) inode->i_block[index],
 				targetType, targetName);
