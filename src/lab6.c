@@ -288,7 +288,7 @@ int main(int argc, char * argv[]) {
 //			(int) groupDesc->bg_block_bitmap);
 	Inode * target = groupSearch(fd, fileNames, groupDesc);
 	if (target == NULL) {
-		printf("main: unable to find");
+		printf("main: unable to find ");
 		printArray(fileNames);
 	} else {
 		inodeShow(fd, target);
