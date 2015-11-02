@@ -19,7 +19,16 @@ typedef struct ext2_group_desc GroupDesc;
 typedef struct ext2_inode Inode;
 typedef struct ext2_dir_entry_2 DirEntry;
 
+int printArray(char ** fileNames) {
+	for (int index = 0; fileNames[index] != NULL; index++) {
+		printf("%s ", fileNames[index]);
+	}
+	puts("");
+	return 0;
+}
+
 char ** parsePath(char * path) {
+	assert(path != NULL);
 	char ** fileNames = malloc(MAX * sizeof(char *));
 	char * token = strsep(&path, "/");
 	token = strsep(&path, "/");
@@ -112,13 +121,14 @@ GroupDesc * GroupDescriptor_(int fd) {
 }
 
 Inode * Inode_(int fd, int inodeTable, int inodeNumber) {
+	assert(inodeNumber > 0);
 	int blockNumber = inodeTable + (inodeNumber - 1) / INODES_PER_BLOCK;
 	char* block = getBlock(fd, blockNumber);
 	Inode* inode = (Inode*) block + (inodeNumber - 1) % INODES_PER_BLOCK;
 //	printf("mode=%4x\n", inode->i_mode);
 //	printf("uid=%d\n", inode->i_uid);
 //	printf("gid=%d\n", inode->i_gid);
-	printf("i_size=%d\n", inode->i_size);
+//	printf("i_size=%d\n", inode->i_size);
 //	printf("time=%s", ctime((time_t *) &inode->i_mtime));
 //	printf("links=%d\n", inode->i_links_count);
 //	printf("i_blocks=%d\n", inode->i_blocks);
@@ -179,6 +189,9 @@ int ialloc(int fd) {
 }
 
 int blockSearch(int fd, int blockNumber, char targetType, char * targetName) {
+	assert(blockNumber != 0);
+	printf("blockSearch: blockNumber = %d; targetType = %x; targetName = %s;\n",
+			blockNumber, targetType, targetName);
 	char * blockHead = getBlock(fd, blockNumber);
 	char * blockTail = blockHead + BLOCK_SIZE;
 	for (DirEntry * dirEntry = (DirEntry *) blockHead;
@@ -189,7 +202,6 @@ int blockSearch(int fd, int blockNumber, char targetType, char * targetName) {
 		actualName[dirEntry->name_len] = '\0';
 		if (targetType == dirEntry->file_type
 				&& strcmp(targetName, actualName) == 0) {
-			printf("%x %s\n", dirEntry->file_type, actualName);
 			return (int) dirEntry->inode;
 		}
 	}
@@ -198,7 +210,10 @@ int blockSearch(int fd, int blockNumber, char targetType, char * targetName) {
 
 Inode * inodeSearch(int fd, int inodeTable, Inode * inode, char targetType,
 		char * targetName) {
-	for (int index = 0; index < (int) inode->i_blocks; index++) {
+	assert(inode != NULL);
+	printf("inodeSearch: inode = %d; targetType = %x; targetName = %s;\n",
+			(int) inode, targetType, targetName);
+	for (int index = 0; inode->i_block[index] != 0; index++) {
 		int inodeNumber = blockSearch(fd, (int) inode->i_block[index],
 				targetType, targetName);
 		if (inodeNumber != 0) {
@@ -218,6 +233,8 @@ int printBlocks(int fd, int leftover, int * blockNumbers, int size) {
 }
 
 int inodeShow(int fd, Inode * inode) {
+	assert(inode != NULL);
+	puts("inodeShow:");
 	if (inode == NULL) {
 		return 0;
 	}
@@ -236,6 +253,8 @@ int inodeShow(int fd, Inode * inode) {
 }
 
 Inode * groupSearch(int fd, char ** fileNames, GroupDesc * groupDesc) {
+	puts("groupSearch:");
+	printArray(fileNames);
 	Inode * root = Inode_(fd, (int) groupDesc->bg_inode_table, 2);
 	Inode * probe = root;
 	for (int index = 0; fileNames[index] != NULL; index++) {
@@ -270,8 +289,12 @@ int main(int argc, char * argv[]) {
 //	printBitmap(fd, (int) super->s_blocks_count,
 //			(int) groupDesc->bg_block_bitmap);
 	Inode * target = groupSearch(fd, fileNames, groupDesc);
-	int status = inodeShow(fd, target);
-	assert(status == 0);
+	if (target == NULL) {
+		printf("main: unable to find");
+		printArray(fileNames);
+	} else {
+		inodeShow(fd, target);
+	}
 	close(fd);
 	return EXIT_SUCCESS;
 }
