@@ -1,0 +1,215 @@
+<html><head>
+<meta http-equiv="content-type" content="text/html; charset=windows-1252"></head><body>
+<pre>
+        CS360 EXAM #1     NAME_____________________   ID _____________________
+
+1. A link list contains the following kind of nodes:
+   --------------------------------------- |        (WRITE ANSWERS HERE:)
+     NEXT  : a pointer to the next node    |  
+     VALUE : an integer                    |     
+     NAME  : an array of 64 chars          |    
+   --------------------------------------- |  
+(1). Write C statements to define the node structure ==&gt;  
+                                           | 
+     --------------------------------------------------------------------------
+<font color="#FF00FF">
+    struct node{                                struct node{
+        struct node *next;                             node *next;  NO
+        int          value;
+        char         name[64];
+    }
+</font>
+
+(2). A link list points to a list of nodes, which ends with a NULL pointer. Write a
+     C function which returns the SUM of all the node VALUEs in a link list.
+<font color="#FF0000">
+     int sum(struct node *list)
+     {
+        (list==0)? return 0 : return list-&gt;value + sum(list-&gt;next);
+     }
+</font>
+
+
+2. In LAB#1 YOU wrote a myprintf() function. Consider the following C program:
+
+ /*******  main.c file ******/ |   /*******YOUR myprintf() file **********/
+  int f, g = 123;              |  
+  main()                       |     myprintf(                    )
+  {                            |     {
+    int a, b, c;               |        char *cp; int *ip; 
+    a = 1; b = 2; c=3;         |     HERE:  
+    myprintf("%d %d %d",a,b,c);|        
+  }                            |     }
+     
+(1). YOUR myprintf() function HEAD is INCOMPLETE. Make it complete.
+<font color="#FF0000">
+        myprintf(char *fmt, ...)
+</font>
+
+
+(2). For the variables f,g,a,b,c,cp,ip, which are in the a.out file and
+     WHY?_______________________________________________________________
+<font color="#FF0000">
+      g: the only initialized GLOBAL variable
+</font>
+
+(3). Execution is at the label HERE. Draw a diagram to show the stack contents
+     from entry to main() to HERE.
+<font color="#FF0000">
+                  a   b   c       b   b   a 
+      | PC | FP | 1 | 2 | 3 |???| 3 | 2 | 1 | fmt | PC | FP | cp | ip |
+                                                         |
+                                                      CPU.FP
+</font>
+
+(4). While at HERE, how to tell the CPU where is 
+     the local variable cp? ________________    the item a? __________________
+<font color="#FF0000">
+                        cp: -4(%ebp)                     a: +12(%ebp)
+</font>
+
+(5). Write C code to let cp point at the FORMAT string  ______________________
+                         ip point at the parameter a   _______________________
+<font color="#FF0000">
+                         cp = fmt;
+                         ip = (int *)&amp;fmt + 1;
+</font>
+
+3.(1). Write C code to "make a directory abc"______________________________
+<font color="#FF0000">
+                        int r = mkdir("abc", 0x755);
+</font>
+
+[2]. Write C statements to get the informations of a file named xyz:
+<font color="#FF0000">
+      struct stat mystat                           struct stat *sp
+      int r = stat("xyz", &amp;mystat);                stat("xyz", sp); NO!!!
+</font>
+
+(3). Based on the information you obtained in [2], how to test whether xyz is
+     a DIR or REG file?___________________________________________________
+<font color="#FF0000">
+      if (S_ISDIR(mystat.st_mode));      if (mystat.stmode &amp;0xF000)==0x4000)    
+      if (S_ISREG(mystat.st_mode));      if (mystat.stmode &amp;0xF000)==0x8000)    
+</font>
+
+(4). ASSUME: xyz is a DIRECTORY. Write C code to print ALL the file names 
+     under this directory.
+<font color="#FF0000">
+       DIR *dp;
+       struct dirent *ep;
+       dp = opendir(dir);
+       while ( (ep=readdir(dp)){
+          printf("%s ", ep-&gt;dname);
+       } 
+</font>
+
+
+
+
+<pre>
+4. Given: A ts.s file which defines the symbol main:
+          .global main, mymain
+   main:  pushl %ebp
+          movl  %ebp, %esp
+   HERE:
+(1). As you know, someone calls main as    main(argc, argv, env). The following
+  diagram shows the stack at HERE: Fill in the boxes 1 to 5 with stack contents:
+
+     --------1--------2--------3--------4--------5--------------
+ HIGH    |  env  |  argv |   argc |  PC    |    ebp   |           LOW
+    ---------------------------------------------|--------------
+                                              CPU.ebp
+(2) Write ASSEMBLY code to call mymain(int argc, env argv[], char *env[])   
+<font color="#FF00FF">
+    pushl 16(%ebp)
+    pushl 12(%ebp)
+    pushl  8(%ebp)
+    call  mymain
+ </font>   
+
+5. ASSUME: The following program is run as         a.out 360 is fun &gt; OUTFILE
+          main(int argc, char *argv[], char *env[])
+           {
+             S1:  if (fork()==0)
+             S2:     execve(argv[0], argv, env);
+             S3:  wait(&amp;argc);   
+           }
+(1). How does sh find an executable file a.out? _ search DIRs in $PATH _______
+(2). Start from the sh process, which process executes a.out? ___child sh ____
+(3). PER THE QUESTION!! Draw a diagram to show exactly what is argv:_______
+<font color="#FF00FF">
+              -- 0-----1----2----3------------------
+        argv: |  .  |  . |  . |  . | 0 |
+              ---|-----|----|----|------------   
+              "a.out" "360" "is" "fun"
+ </font>   
+(4). Write C code to do the &gt; symbol:_____________________________________
+<font color="#FF00FF">
+      close(1);
+      int fd=open("OUTFILE",O_WRONLY|O_CREAT|O_TRUNC);
+      // dup(fd);            or         dup2(fd, 1);
+</font>   
+(5). After S1, there MAY BE more than one process. If so, which process 
+     executes S2 AND what does it do?_____________________________________
+<font color="#FF00FF">
+         CHILD process does S2: change image to argv[0]=a.out again
+</font>   
+(6). Which process executes S3 AND what does it do? ______________________
+<font color="#FF00FF">
+         parent process does S3: wait for child to terminate
+</font>   
+(7). EXPLAIN: What would happen when running this program?
+<font color="#FF00FF">
+       fork() eventually fails =&gt; return -1 =&gt; does not change image again
+       wait() will fail since NO child =&gt; die =&gt; wakeup parent =&gt; wakeup,...
+     The program terminates normally.
+</font>   
+
+6. Assume: YOUR mysh is given the command line  cat file | grep line
+(1). Write C code to create a pipe with 2 file descriptors:_______ _____________
+(2). Write C code to create a child process to share the pipe: ________________ 
+(3). Write C statements to let 
+       Parent as pipe READER      |          Child as pipe WRITER
+                                  |
+--------------------------------------------------------------------------
+<font color="#FF00FF">
+      int pd[2]; pipe(pd);
+      int pid = fork();
+      if (pid){                           else{
+         close(pd[1]);                      close(pd[0]);
+         dup2(pd[0], 0);                    dup2(pd[1], 1);
+      }                                   }
+</font>   
+
+7.(1) When you enter the URL  http://cs360.eecs.wsu.edu/~YOURNAME, you get a web
+ page from a default file, which is  ~YOURNAME/___public_html___/__index.html__
+
+
+(2). The SUBMIT button sends a request to YOUR mycgi program on cs360 server. 
+What is the user ID of the process that executes YOUR mycgi program?__ 80 _____
+HOW can it write to YOUR directory on the server machine?___setuid ___________
+
+8. The Linux command     dd if=SRC of=DEST bs=1024 skip=1 seek=2     
+dumps a SRC file to a DEST file by blockSize=1024 bytes at a time, but SKIP 1 
+block of SRC and 2 blocks of DEST before dumping. ASSUME: dd is by system calls.
+(1). Write C statements to prepare the files for dumping:
+     For the SRC file:_________________ For the DEST file:____________________
+<font color="#FF00FF">
+     if fd = open(SRC, O_RDONLY);         int gd = open(DEST, O_WRONLY|O_CREAT)
+</font>   
+(2). Write C code to SKIP the number of blocks (of 1024 bytes) as required:
+     For the SRC file:_________________ For the DEST file:__________________
+<font color="#FF00FF">
+     lseek(fd, 1*1024,0)                     lseek(gd, 2*1024, 0);
+</font>   
+
+(3). Write C statements to DUMP file contents:
+     For the SRC file            |          For the DEST file:    
+<font color="#FF00FF">
+     int n; char buf[1024];
+     while(n=read(fd, buf,1024)){
+                                          write(gd, buf, 1024);
+     }
+</font> 
+</pre></pre></body></html>

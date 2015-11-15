@@ -107,7 +107,7 @@ Super * Super_(int fd) {
 	return super;
 }
 
-GroupDesc * GroupDescriptor_(int fd) {
+GroupDesc * Bgd_(int fd) {
 	GroupDesc * groupDescriptor = (GroupDesc *) getBlock(fd, 2);
 //	printf("bg_block_bitmap = %d\n", groupDescriptor->bg_block_bitmap);
 //	printf("bg_inode_bitmap = %d\n", groupDescriptor->bg_inode_bitmap);
@@ -276,7 +276,7 @@ int main(int argc, char * argv[]) {
 	assert(fd >= 0);
 	char ** fileNames = parsePath(argv[2]);
 //	Super * super = Super_(fd);
-	GroupDesc * groupDesc = GroupDescriptor_(fd);
+	GroupDesc * groupDesc = Bgd_(fd);
 //	char buf[BLOCK_SIZE];
 //	for (int i = 0; i < 5; i++) {
 //		int ino = ialloc(fd);
