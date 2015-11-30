@@ -1,0 +1,176 @@
+
+<!-- saved from url=(0038)http://www.eecs.wsu.edu/~cs360/e2.html -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"></head><body>
+<pre>           CS360 EXAM 2       NAME______________________ ID________________
+
+1. Given: sizeof(int)=4; int buf[1024]; &lt;========= READ CAREFULLY AGAIN !
+
+(1). How many bits are in buf[ ]?    4*1024*8 = 32768
+
+(2). Assume: bits are counted from 100. For BIT=421
+     which buf[i] contains this BIT? _____________ 
+
+           i = (421-100)/32 = 321/32 = 10
+
+     which bit in buf[i] is this BIT? _____________ 
+
+           j = (421-100)%32 = 321%32 = 1
+
+(3). Write C code to TEST whether BIT=421 in buf[ ] is 0 or 1 __________________
+
+           if (buf[i] &amp; (1 &lt;&lt; j)
+
+(4).Write C code to SET BIT=421 in buf[ ] to 1:___________________________
+
+           buf[i] |= (1 &lt;&lt; j)
+
+2. Assume: An INODE has SOME indirect blocks.
+   Given:  char buf[1024]; &lt;=================== READ CAREFULLY AGAIN!!
+
+(1). Write C code to read the indirect block of this INODE into buf[ ]:
+
+         get_block(fd, INODE.i_block[12], buf);
+
+(2). Write C code to print all the indirect block NUMBERs of this INODE:
+
+         int *ip = (int *)buf;
+         while(ip &lt; buf+1024 &amp;&amp; *ip)
+            printf("%d ", *ip++);
+
+3. Given: On an EXT2 file system disk, BLKSIZE=1024, sizeof(INODE)=128,
+          inode_begin_block = INODEs begin block number;
+          char buf[BLKSIZE];
+
+(1). EXPLAIN: How do you find inode_begin_block?____________________________
+   
+       read GD block (blk 2)
+       inode_begin_block = GD's bg_inode_table
+
+(2). Assume: INODE thisInode, whose ino=32. 
+     Which disk block contains thisInode?___________________________________
+  
+       blk = (32-1)/8 + inode_begin_block = 3 + inode_begin_block
+
+(3). Write C code to read the disk block containing thisInode into buf[ ]:
+ 
+      get_block(fd, blk, buf);
+ 
+(4). Write C code to let INODE *ip point to thisInode in buf[ ]:
+
+      ip = (INODE *)buf + (32-1)%8;
+   
+(5). Given: INODE THATinode. Write C code to copy thisInode to THATinode:
+
+      THATinod = thisInode;
+
+(6). Assume: thisInode is a directory. Write C code to read the 0th data block 
+     of thisInode into buf[ ]________________________________________________
+
+        get_block(fd, thisInode.i_block[0], buf);
+
+(7). Write C code to print ALL the DIR entires in buf[ ] in the format:
+
+             ino    rec_len  name_len   name
+          --------  -------  --------  --------
+        
+     char c, *cp = buf, temp]256]; 
+     DIR *dp = (DIR *)buf;
+     while(cp &lt; buf+1024){
+        strncpy(temp, dp-&gt;name, dp-&gt;name_len);
+        temp[dp-&gt;name_len] = 0;
+        printf("%d %d %d %s\n", dp-&gt;inode, dp-&gt;rec_len, dp-&gt;name_len, temp);
+        cp += dp-&gt;rec_len;
+        dp = (DIR *)cp;
+     }
+
+
+4. Given: MINODE minode[100]; MINODE *root points at the minode of /
+   ------- you may use THESE FUNCTIONS in your answers ------------ 
+           int getino(int *dev, char *pathname);
+           MINODE *iget(dev, ino);
+           int     iput(MINODE *mip);
+   ---------------------------------------------------------------
+Consider the command: mkdir /a/b/testNewName
+
+(1). What is the parent DIR name?__ "/a/b"__ child DIR name?___ "c"_______
+     Write C code to get the parent DIR name: dirname( "/a/b/testNewName");
+                             child  DIR name: basename("/a/b/testNewName");
+
+(2). Write C code to determine whether the parent DIR exists:_________________
+
+        int dev = root-&gt;dev;    
+        int ino = getino(&amp;dev, "/a/b");
+       
+(3). Assume that the parent DIR exists. Write C code to load its INODE into an 
+     minode[ ] pointed by MINODE *mip, then test whether it's a DIR:
+
+         mip = iget(dev, ino);
+         if ( S_ISDIR(mip-&gt;INODE.i_mode) )
+
+
+(4). Assume: inoode_number for the child=123, block_number=456. Fill in the
+     the child data block contents:
+
+        ino rlen nlen name|ino rlen nlen name         
+       ---- ---- ---- ----|--- ---- ---- ---- --------------------
+       |123  12   1   .   |ino 1012  2   ..                      |
+       -----------------------------------------------------------
+
+(5). Assume: char buf[1024] contains the data block of the parent DIR.
+     Write C code to let DIR *dp point to the LAST DIR entry in buf[ ]:
+
+       char *cp = buf;
+       DIR *dp = (DIR *)buf;
+       while(cp + dp-&gt;rec_len &lt; buf+1024){
+           cp += dp-&gt;rec_len;
+           dp = (DIR *cp);
+       }
+
+
+(6). Assume: LAST DIR entry = [ino|rlen=1000|nlen=7|oldName..............];
+
+     What's its IDEAL length?______   4*[(8+7+3)/4] = 16  _______________
+
+(7). EXPLAIN: How to enter the child DIR entry into the parent data block:
+      trim LAST DIR entry length to 16;
+      enter [123, 1000-16, 11, testNewName     ] as last entry      
+
+(8). Write C code to write the parent INODE in (3) back to disk______________
+      
+        mip-&gt;dirty = 1;
+        iput(mip);
+
+5. When rmdir, we must delete an entry from its parent data block.
+
+(1). Assume: the entry to be deleted is the LAST entry in a parent data block.
+     EXPLAIN: how to delete the entry?___ ADD rec_len to previous entry ____
+
+
+(2). Assume: the entry to be deleted is in the middle of a parent data block, 
+     which is in a char buf[BLKSIZE], as shown in the following diagram.
+     
+                         char *np
+                               |    
+               char *cp        |&lt;------- LENGTH -----------&gt;|
+          -----------|---------|-----------------------------
+          | entries  |DIR entry|     Other_Entrie .. ....   |
+          |          |to delete|                            |
+          -----------|---------|-----------------------------
+                        
+(1). As shown, char *cp points at the beginning of the entry to be deleted.
+     Write C code to let char *np point at the END of this entry:___________
+           np = cp + dp-&gt;rec_len;
+
+(2). Write C code to compute the LENGTH in bytes:___  buf+1024 - np _____
+
+(3). write C code to move all Other_Entries LEFT to overlay the deleted entry:
+
+           memcpy(cp, np, LENGTH);
+
+
+(4). What do you do with the rec_len of the deleted entry?_ ADD to last entry _
+
+
+<img src="./midterm2_files/exam2.jpg">
+           
+</pre></body></html>
